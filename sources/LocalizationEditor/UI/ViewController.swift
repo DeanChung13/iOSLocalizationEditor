@@ -77,11 +77,23 @@ final class ViewController: NSViewController {
         let appName = Bundle.main.infoDictionary![kCFBundleNameKey as String] as! String
         view.window?.title = title.flatMap({ "\(appName) [\($0)]" }) ?? appName
 
-        let columns = tableView.tableColumns
-        columns.forEach {
-            self.tableView.removeTableColumn($0)
+        if tableView.tableColumns.isEmpty {
+            addTableColumns(with: languages)
         }
 
+        tableView.reloadData()
+
+        // Also resize the columns:
+        tableView.sizeToFit()
+
+        // Needed to properly size the actions column
+        DispatchQueue.main.async {
+            self.tableView.sizeToFit()
+            self.tableView.layout()
+        }
+    }
+
+    private func addTableColumns(with languages: [String]) {
         let column = NSTableColumn(identifier: NSUserInterfaceItemIdentifier(FixedColumn.key.rawValue))
         column.title = "key".localized
         tableView.addTableColumn(column)
@@ -99,17 +111,6 @@ final class ViewController: NSViewController {
         actionsColumn.maxWidth = 48
         actionsColumn.minWidth = 32
         tableView.addTableColumn(actionsColumn)
-
-        tableView.reloadData()
-
-        // Also resize the columns:
-        tableView.sizeToFit()
-
-        // Needed to properly size the actions column
-        DispatchQueue.main.async {
-            self.tableView.sizeToFit()
-            self.tableView.layout()
-        }
     }
 
     private func filter() {
@@ -241,7 +242,7 @@ extension ViewController: WindowControllerToolbarDelegate {
      */
     func userDidRequestLocalizationGroupChange(group: String) {
         let languages = dataSource.selectGroupAndGetLanguages(for: group)
-        reloadData(with: languages, title: title)
+        reloadData(with: languages, title: group)
     }
 
     /**
